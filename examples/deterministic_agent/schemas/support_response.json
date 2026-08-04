@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["category", "approved_refund"],
+  "properties": {
+    "category": { "type": "string" },
+    "approved_refund": { "type": "boolean" },
+    "model": { "type": "string" }
+  },
+  "additionalProperties": true
+}

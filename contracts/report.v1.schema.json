@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/invariant-sh/holds/contracts/report.v1.schema.json",
+  "title": "HoldsRunReport",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "suite_version",
+    "suite_hash",
+    "run_id",
+    "agent_command",
+    "started_at",
+    "finished_at",
+    "attempts",
+    "task_summaries",
+    "summary"
+  ],
+  "properties": {
+    "schema_version": { "type": "string", "const": "1" },
+    "suite_version": { "type": "integer", "const": 1 },
+    "suite_hash": { "type": "string", "minLength": 16 },
+    "run_id": { "type": "string", "minLength": 1 },
+    "agent_command": { "type": "string", "minLength": 1 },
+    "application_revision": { "type": ["string", "null"] },
+    "started_at": { "type": "string" },
+    "finished_at": { "type": "string" },
+    "grader_versions": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "model_id": { "type": ["string", "null"] },
+    "provider": { "type": ["string", "null"] },
+    "temperature": { "type": ["number", "null"] },
+    "seed": { "type": ["integer", "null"] },
+    "attempts": { "type": "array" },
+    "task_summaries": { "type": "array" },
+    "summary": {
+      "type": "object",
+      "required": [
+        "tasks",
+        "attempts",
+        "passed_attempts",
+        "pass_rate",
+        "threshold_passed"
+      ]
+    }
+  },
+  "additionalProperties": true
+}
