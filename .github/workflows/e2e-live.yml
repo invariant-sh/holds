@@ -1,0 +1,28 @@
+name: Live framework smoke
+
+on:
+  workflow_dispatch:
+
+jobs:
+  live:
+    name: opt-in live provider smoke
+    runs-on: ubuntu-latest
+    if: ${{ secrets.HOLDS_LIVE_BASE_URL != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          python-version: "3.12"
+
+      - name: Sync dependencies
+        run: uv sync --extra dev --extra e2e
+
+      - name: Live smoke
+        env:
+          HOLDS_LIVE_BASE_URL: ${{ secrets.HOLDS_LIVE_BASE_URL }}
+          HOLDS_LIVE_API_KEY: ${{ secrets.HOLDS_LIVE_API_KEY }}
+          HOLDS_LIVE_MODEL: ${{ secrets.HOLDS_LIVE_MODEL }}
+        run: uv run pytest -m live -q

@@ -4,5 +4,25 @@
 .env.*
 __pycache__/
 *.pyc
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.mutmut-cache/
+mutants/
+dist/
+build/
+*.egg-info/
+.venv/
+uv.lock.bak
 /target
 node_modules/
+artifacts/
+.holds/
+# Local operator suite only — example/contract suites must be tracked.
+/holds.yaml
+*.log
+.python-version.local

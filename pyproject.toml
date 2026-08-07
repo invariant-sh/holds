@@ -1,0 +1,170 @@
+[project]
+name = "holds"
+version = "0.1.0"
+description = "Continuous task evaluation and regression harness for LLM agents"
+readme = "README.md"
+license = "Apache-2.0"
+requires-python = ">=3.12"
+authors = [{ name = "Invariant Labs" }]
+keywords = ["llm", "agents", "evaluation", "regression", "ci"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: Apache Software License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Software Development :: Testing",
+  "Typing :: Typed",
+]
+dependencies = [
+  "jsonschema>=4.23.0",
+  "pyyaml>=6.0.2",
+  "typer>=0.16.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "coverage[toml]>=7.8.0",
+  "hypothesis>=6.131.0",
+  "mutmut>=3.2.0",
+  "pytest>=8.3.0",
+  "pytest-cov>=6.1.0",
+  "radon>=6.0.1",
+  "ruff>=0.11.0",
+  "ty>=0.0.1a16",
+]
+e2e = [
+  "crewai>=0.120.0",
+  "langchain-core>=0.3.0",
+  "langgraph>=0.3.0",
+  "openai>=1.70.0",
+]
+
+[project.scripts]
+holds = "holds.cli:app"
+
+[project.urls]
+Homepage = "https://github.com/invariant-sh/holds"
+Documentation = "https://github.com/invariant-sh/holds#readme"
+Repository = "https://github.com/invariant-sh/holds"
+Issues = "https://github.com/invariant-sh/holds/issues"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/holds"]
+
+[tool.hatch.build.targets.wheel.sources]
+"src/holds" = "holds"
+
+[tool.hatch.build.targets.sdist]
+include = [
+  "/src/holds",
+  "/contracts",
+  "/examples",
+  "/scripts",
+  "/README.md",
+  "/LICENSE",
+  "/SECURITY.md",
+]
+
+[tool.uv]
+dev-dependencies = [
+  "coverage[toml]>=7.8.0",
+  "hypothesis>=6.131.0",
+  "mutmut>=3.2.0",
+  "pytest>=8.3.0",
+  "pytest-cov>=6.1.0",
+  "radon>=6.0.1",
+  "ruff>=0.11.0",
+  "ty>=0.0.1a16",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests", "scripts", "examples"]
+
+[tool.ruff.lint]
+select = [
+  "E",
+  "F",
+  "I",
+  "UP",
+  "B",
+  "SIM",
+  "RUF",
+  "N",
+  "ANN",
+  "S",
+  "T20",
+  "C4",
+  "PT",
+]
+ignore = [
+  "ANN401",
+  "S101",
+  "S603",
+  "S607",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["ANN", "S105", "S106", "T20"]
+"examples/**/*.py" = ["ANN", "T20", "S105", "S106", "S310"]
+"scripts/**/*.py" = ["T20"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+pythonpath = ["src", "."]
+addopts = [
+  "-ra",
+  "--strict-markers",
+  "--strict-config",
+]
+markers = [
+  "e2e: black-box external framework compatibility tests",
+  "live: opt-in tests that require a live model endpoint",
+  "mutation_target: modules prioritized for mutation testing",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["holds"]
+omit = [
+  "*/cli.py",
+  "*/__main__.py",
+  "*/adapters/resilience/maul.py",
+]
+
+[tool.coverage.report]
+fail_under = 78
+show_missing = true
+skip_covered = false
+exclude_lines = [
+  "pragma: no cover",
+  "raise NotImplementedError",
+  "if TYPE_CHECKING:",
+]
+
+[tool.ty.environment]
+python-version = "3.12"
+
+[tool.ty.src]
+include = ["src", "tests", "scripts"]
+exclude = ["examples"]
+
+[tool.ty.rules]
+all = "error"
+
+[tool.mutmut]
+paths_to_mutate = ["src/holds/domain/", "src/holds/application/"]
+tests_dir = ["tests/"]
