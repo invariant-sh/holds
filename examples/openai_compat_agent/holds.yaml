@@ -1,0 +1,19 @@
+version: 1
+agent:
+  command: "python agent.py"
+  result_path: "artifacts/result.json"
+defaults:
+  repeats: 1
+  timeout_seconds: 30
+tasks:
+  - id: open-model-classify-refund
+    input:
+      customer_message: "Refund the duplicate subscription charge."
+    expected:
+      category: refund_request
+    graders:
+      - type: exact_field
+        path: "$.category"
+        equals: refund_request
+    thresholds:
+      pass_rate_gte: 1.0

@@ -22,6 +22,7 @@ uv.lock.bak
 node_modules/
 artifacts/
 .holds/
-holds.yaml
+# Local operator suite only — example/contract suites must be tracked.
+/holds.yaml
 *.log
 .python-version.local
