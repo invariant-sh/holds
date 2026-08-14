@@ -169,6 +169,10 @@ Normal task quality and behavior-under-failure remain separate concerns. Maul is
 
 See [`SECURITY.md`](./SECURITY.md). Do not commit secrets, unredacted customer data, or raw prompt captures.
 
+## Contributing
+
+See [`CONTRIBUTING.md`](./CONTRIBUTING.md) and the [`CODE_OF_CONDUCT.md`](./CODE_OF_CONDUCT.md).
+
 ## License
 
 Licensed under the [Apache License, Version 2.0](./LICENSE).
