@@ -7,8 +7,17 @@ jobs:
   live:
     name: opt-in live provider smoke
     runs-on: ubuntu-latest
-    if: ${{ secrets.HOLDS_LIVE_BASE_URL != '' }}
     steps:
+      - name: Require live endpoint secret
+        env:
+          HOLDS_LIVE_BASE_URL: ${{ secrets.HOLDS_LIVE_BASE_URL }}
+        run: |
+          if [ -z "${HOLDS_LIVE_BASE_URL}" ]; then
+            echo "HOLDS_LIVE_BASE_URL is not configured."
+            echo "Set repo secrets HOLDS_LIVE_BASE_URL, HOLDS_LIVE_API_KEY, and HOLDS_LIVE_MODEL before dispatching."
+            exit 1
+          fi
+
       - uses: actions/checkout@v4
 
       - name: Install uv
