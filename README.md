@@ -10,6 +10,8 @@ holds.yaml  →  holds run  →  report + thresholds  →  baseline / compare
 
 Maul proves resilience under failure. Holds measures task quality. Vigil enforces production policy. Holds stays useful without either sibling.
 
+Part of [Invariant Labs](https://github.com/invariant-sh). Site: [getinvariant.sh](https://getinvariant.sh).
+
 ## Status
 
 **v0.1 local core** — suite-first evaluation with deterministic graders, repeats, baselines, CI gates, and black-box framework examples.
@@ -173,8 +175,10 @@ Licensed under the [Apache License, Version 2.0](./LICENSE).
 
 ## Related
 
+Part of [Invariant Labs](https://github.com/invariant-sh) — [getinvariant.sh](https://getinvariant.sh).
+
 | Tool | Role |
 |---|---|
-| **[Maul](https://github.com/invariant-sh/maul)** | Adversarial proxy — prove resilience under failure |
-| **Holds** (this repo) | Eval harness — did the agent solve the job? |
-| **Vigil** | Production controls — enforce policy at the edge |
+| **[Maul](https://github.com/invariant-sh/maul)** | Adversarial proxy — find failures |
+| **Holds** (this repo) | Eval harness — measure task quality |
+| **[Vigil](https://github.com/invariant-sh/vigil)** | Runtime policy SDK — prevent incidents and spend |
