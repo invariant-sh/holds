@@ -28,7 +28,7 @@ When `--enable-maul` is used, Holds may launch the Maul binary and attach resili
 If you believe you found a security issue in Holds:
 
 1. **Do not** open a public GitHub issue with exploit details.
-2. Contact the maintainers via the [Invariant](https://github.com/invariant-sh) org profile, or open a **private** security advisory on GitHub if enabled.
+2. Open a [private security advisory](https://github.com/invariant-sh/holds/security/advisories/new) on this repository.
 3. Include: Holds version/commit, reproduction steps, and impact.
 
 We aim to acknowledge reports within a few business days.
