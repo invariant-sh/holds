@@ -142,7 +142,6 @@ source = ["holds"]
 omit = [
   "*/cli.py",
   "*/__main__.py",
-  "*/adapters/resilience/maul.py",
 ]
 
 [tool.coverage.report]

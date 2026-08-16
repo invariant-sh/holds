@@ -193,15 +193,28 @@ class YamlSuiteLoader:
         if not isinstance(raw, dict):
             msg = f"{prefix} must be a mapping"
             raise SuiteValidationError(msg)
+        unknown = {
+            str(key)
+            for key in raw
+            if key not in {"scenarios", "repeats", "config", "expected_outcome"}
+        }
+        if unknown:
+            msg = f"{prefix} unknown fields: {sorted(unknown)}"
+            raise SuiteValidationError(msg)
         scenarios = raw.get("scenarios") or []
         if not isinstance(scenarios, list) or not all(isinstance(item, str) for item in scenarios):
             msg = f"{prefix}.scenarios must be a list of strings"
+            raise SuiteValidationError(msg)
+        expected_outcome = raw.get("expected_outcome", "task_complete")
+        if expected_outcome not in {"task_complete", "safe_degradation"}:
+            msg = f"{prefix}.expected_outcome must be task_complete or safe_degradation"
             raise SuiteValidationError(msg)
         try:
             return MaulCondition(
                 scenarios=tuple(scenarios),
                 repeats=_optional_int(raw.get("repeats")),
                 config=_optional_str(raw.get("config")),
+                expected_outcome=expected_outcome,
             )
         except ValueError as error:
             raise SuiteValidationError(str(error)) from error

@@ -1,0 +1,131 @@
+name: Holds Run
+description: Run a Holds suite and optionally compare the report against a checked-in baseline.
+author: Invariant Labs
+
+inputs:
+  suite:
+    description: Path to holds.yaml, relative to working-directory.
+    required: false
+    default: holds.yaml
+  report:
+    description: Destination path for the JSON run report.
+    required: false
+    default: artifacts/holds_report.json
+  baseline:
+    description: Optional accepted baseline JSON. When set, holds compare runs after holds run.
+    required: false
+    default: ""
+  working-directory:
+    description: Directory containing the suite and agent.
+    required: false
+    default: "."
+  extra-args:
+    description: Extra arguments forwarded to holds run.
+    required: false
+    default: ""
+  artifact-name:
+    description: Artifact name for the JSON and Markdown reports.
+    required: false
+    default: holds-evaluation-report
+  artifact-retention-days:
+    description: Artifact retention in days. Keep short; reports can be sensitive.
+    required: false
+    default: "7"
+
+outputs:
+  report-path:
+    description: Path to the JSON evaluation report.
+    value: ${{ steps.run.outputs.report-path }}
+  summary-path:
+    description: Path to the Markdown evaluation summary.
+    value: ${{ steps.run.outputs.summary-path }}
+  suite-hash:
+    description: Suite content hash from the report.
+    value: ${{ steps.run.outputs.suite-hash }}
+  pass-rate:
+    description: Candidate pass rate.
+    value: ${{ steps.run.outputs.pass-rate }}
+  threshold-passed:
+    description: Whether absolute suite thresholds passed.
+    value: ${{ steps.run.outputs.threshold-passed }}
+
+runs:
+  using: composite
+  steps:
+    - name: Run Holds suite and compare baseline
+      id: run
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        HOLDS_SUITE: ${{ inputs.suite }}
+        HOLDS_REPORT: ${{ inputs.report }}
+        HOLDS_BASELINE: ${{ inputs.baseline }}
+        HOLDS_EXTRA_ARGS: ${{ inputs.extra-args }}
+      run: |
+        set -uo pipefail
+        extra=()
+        if [[ -n "${HOLDS_EXTRA_ARGS}" ]]; then
+          # shellcheck disable=SC2206
+          extra=(${HOLDS_EXTRA_ARGS})
+        fi
+        run_code=0
+        uv run holds run --suite "${HOLDS_SUITE}" --report "${HOLDS_REPORT}" "${extra[@]}" || run_code=$?
+        cmp_code=0
+        if [[ -n "${HOLDS_BASELINE}" ]]; then
+          uv run holds compare --candidate "${HOLDS_REPORT}" --baseline "${HOLDS_BASELINE}" || cmp_code=$?
+        fi
+        python3 - "${HOLDS_REPORT}" "${GITHUB_OUTPUT}" <<'PY'
+        import json
+        import pathlib
+        import sys
+
+        report_path = pathlib.Path(sys.argv[1])
+        output_path = pathlib.Path(sys.argv[2])
+        summary_path = report_path.with_suffix(".md")
+        suite_hash = ""
+        pass_rate = ""
+        threshold_passed = ""
+        if report_path.is_file():
+            report = json.loads(report_path.read_text())
+            summary = report.get("summary") or {}
+            suite_hash = str(report.get("suite_hash") or "")
+            pass_rate = str(summary.get("pass_rate", ""))
+            threshold_passed = str(summary.get("threshold_passed", "")).lower()
+        lines = [
+            f"report-path={report_path}",
+            f"summary-path={summary_path}",
+            f"suite-hash={suite_hash}",
+            f"pass-rate={pass_rate}",
+            f"threshold-passed={threshold_passed}",
+        ]
+        with output_path.open("a", encoding="utf-8") as handle:
+            handle.write("\n".join(lines) + "\n")
+        PY
+        if [[ "${run_code}" -ne 0 ]]; then
+          exit "${run_code}"
+        fi
+        exit "${cmp_code}"
+
+    - name: Append Markdown summary
+      if: always()
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        HOLDS_REPORT: ${{ inputs.report }}
+      run: |
+        set -euo pipefail
+        summary="${HOLDS_REPORT%.*}.md"
+        if [[ -f "${summary}" && -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
+          cat "${summary}" >> "${GITHUB_STEP_SUMMARY}"
+        fi
+
+    - name: Upload evaluation reports
+      if: always()
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: |
+          ${{ inputs.working-directory }}/${{ inputs.report }}
+          ${{ inputs.working-directory }}/${{ steps.run.outputs.summary-path }}
+        if-no-files-found: warn
+        retention-days: ${{ inputs.artifact-retention-days }}

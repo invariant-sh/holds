@@ -1,0 +1,46 @@
+{
+  "agent_command": "python agent.py",
+  "application_revision": "c45d1ed0917584b18fab7bfe937a1653414e4805",
+  "grader_versions": [
+    "exact:1",
+    "json_schema:1",
+    "python:1"
+  ],
+  "model_id": null,
+  "promoted_at": "2026-08-16T01:47:33Z",
+  "provider": null,
+  "reason": "accepted deterministic fixture",
+  "reviewer": "ci",
+  "run_id": "run-65205afa2d98",
+  "schema_version": "1",
+  "seed": 7,
+  "suite_hash": "39a31cb1bae8192e2c758b13dc47d35a576bf3d5759275030ed04b2c65793722",
+  "suite_version": 1,
+  "summary": {
+    "attempts": 2,
+    "pass_rate": 1.0,
+    "passed_attempts": 2,
+    "schema_valid_rate": 1.0,
+    "tasks": 1,
+    "threshold_failures": [],
+    "threshold_passed": true
+  },
+  "task_summaries": [
+    {
+      "attempts": 2,
+      "consistency_rate": null,
+      "pass_rate": 1.0,
+      "passed": 2,
+      "schema_valid_rate": 1.0,
+      "task_id": "classify-refund-request",
+      "threshold_failures": [],
+      "threshold_passed": true
+    }
+  ],
+  "temperature": null,
+  "thresholds": {
+    "max_regression_points": null,
+    "pass_rate_gte": null,
+    "schema_valid_rate_gte": null
+  }
+}

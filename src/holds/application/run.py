@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from holds.application.resilience import ResilienceAttempt, attach_resilience
 from holds.domain.errors import (
     AgentExecutionError,
     AgentTimeoutError,
@@ -152,67 +153,72 @@ class RunService:
         env: dict[str, str],
         grader_versions: set[str],
     ) -> AttemptResult:
-        working_directory = (
-            Path(suite.agent.working_directory) if suite.agent.working_directory else suite_dir
+        working_directory = _working_directory(suite, suite_dir)
+        session = ResilienceAttempt(
+            runner=self._resilience_runner,
+            request=_maul_request(suite, suite_dir, task, attempt_id),
+            enabled=task.maul is not None and self._resilience_runner is not None,
         )
-        resilience_path = self._prepare_resilience(suite, suite_dir, task)
-        request = AgentLaunchRequest(
-            command=suite.agent.command,
-            working_directory=working_directory,
-            result_path=working_directory / suite.agent.result_path,
-            input_path=working_directory / ".holds" / f"{attempt_id}.input.json",
-            input_payload=task.input,
-            task_id=task.id,
-            attempt_id=attempt_id,
-            timeout_seconds=timeout,
-            seed=suite.defaults.seed,
-            env=env,
-        )
+        with session as prepared:
+            attempt = self._launch_and_grade(
+                request=AgentLaunchRequest(
+                    command=suite.agent.command,
+                    working_directory=working_directory,
+                    result_path=working_directory / suite.agent.result_path,
+                    input_path=working_directory / ".holds" / f"{attempt_id}.input.json",
+                    input_payload=task.input,
+                    task_id=task.id,
+                    attempt_id=attempt_id,
+                    timeout_seconds=timeout,
+                    seed=suite.defaults.seed,
+                    env={**env, **prepared.env},
+                ),
+                suite_dir=suite_dir,
+                task=task,
+                attempt_id=attempt_id,
+                timeout=timeout,
+                seed=suite.defaults.seed,
+                grader_versions=grader_versions,
+            )
+        return attach_resilience(attempt, session.collected, task.maul)
+
+    def _launch_and_grade(
+        self,
+        *,
+        request: AgentLaunchRequest,
+        suite_dir: Path,
+        task: TaskSpec,
+        attempt_id: str,
+        timeout: float,
+        seed: int | None,
+        grader_versions: set[str],
+    ) -> AttemptResult:
         launch = self._safe_launch(
             request,
             task_id=task.id,
             attempt_id=attempt_id,
             timeout=timeout,
-            seed=suite.defaults.seed,
-            resilience_path=resilience_path,
+            seed=seed,
         )
         if isinstance(launch, AttemptResult):
             return launch
-
         early = _launch_failure_result(
             task_id=task.id,
             attempt_id=attempt_id,
             launch=launch,
-            seed=suite.defaults.seed,
+            seed=seed,
             include_outputs=self._include_outputs,
-            resilience_path=resilience_path,
         )
         if early is not None:
             return early
-
-        assert launch.output is not None
         return self._grade_attempt(
             suite_dir=suite_dir,
             task=task,
             attempt_id=attempt_id,
             launch=launch,
-            seed=suite.defaults.seed,
+            seed=seed,
             grader_versions=grader_versions,
-            resilience_path=resilience_path,
         )
-
-    def _prepare_resilience(self, suite: Suite, suite_dir: Path, task: TaskSpec) -> str | None:
-        if task.maul is None or self._resilience_runner is None:
-            return None
-        resilience = self._resilience_runner.prepare(
-            ResilienceRequest(
-                scenarios=task.maul.scenarios,
-                config_path=(suite_dir / task.maul.config if task.maul.config else None),
-                repeats=task.maul.repeats or 1,
-                seed=suite.defaults.seed,
-            )
-        )
-        return str(resilience.report_path) if resilience.report_path is not None else None
 
     def _safe_launch(
         self,
@@ -222,7 +228,6 @@ class RunService:
         attempt_id: str,
         timeout: float,
         seed: int | None,
-        resilience_path: str | None,
     ) -> AgentLaunchResult | AttemptResult:
         try:
             return self._agent_runner.run(request)
@@ -234,7 +239,6 @@ class RunService:
                 duration_ms=int(timeout * 1000),
                 error=str(error),
                 seed=seed,
-                resilience_path=resilience_path,
             )
         except MissingResultArtifactError as error:
             return _error_attempt(
@@ -244,7 +248,6 @@ class RunService:
                 duration_ms=0,
                 error=str(error),
                 seed=seed,
-                resilience_path=resilience_path,
             )
         except AgentExecutionError as error:
             return _error_attempt(
@@ -254,7 +257,6 @@ class RunService:
                 duration_ms=0,
                 error=str(error),
                 seed=seed,
-                resilience_path=resilience_path,
             )
 
     def _grade_attempt(
@@ -266,7 +268,6 @@ class RunService:
         launch: AgentLaunchResult,
         seed: int | None,
         grader_versions: set[str],
-        resilience_path: str | None,
     ) -> AttemptResult:
         assert launch.output is not None
         try:
@@ -289,7 +290,6 @@ class RunService:
                 stdout_tail=_tail(launch.stdout),
                 stderr_tail=_tail(launch.stderr),
                 output=launch.output if self._include_outputs else None,
-                resilience_report_path=resilience_path,
             )
         passed = all(item.passed for item in evidence)
         return AttemptResult(
@@ -306,7 +306,6 @@ class RunService:
             seed=seed,
             stdout_tail=_tail(launch.stdout),
             stderr_tail=_tail(launch.stderr),
-            resilience_report_path=resilience_path,
         )
 
     def _grade_output(
@@ -364,6 +363,39 @@ class RunService:
         )
 
 
+def _working_directory(suite: Suite, suite_dir: Path) -> Path:
+    if suite.agent.working_directory:
+        return Path(suite.agent.working_directory)
+    return suite_dir
+
+
+def _maul_request(
+    suite: Suite,
+    suite_dir: Path,
+    task: TaskSpec,
+    attempt_id: str,
+) -> ResilienceRequest:
+    maul = task.maul
+    if maul is None:
+        return ResilienceRequest(
+            scenarios=(),
+            config_path=None,
+            repeats=1,
+            seed=suite.defaults.seed,
+            task_id=task.id,
+            attempt_id=attempt_id,
+        )
+    config_path = suite_dir / maul.config if maul.config else None
+    return ResilienceRequest(
+        scenarios=maul.scenarios,
+        config_path=config_path,
+        repeats=maul.repeats or 1,
+        seed=suite.defaults.seed,
+        task_id=task.id,
+        attempt_id=attempt_id,
+    )
+
+
 def _launch_failure_result(
     *,
     task_id: str,
@@ -371,7 +403,6 @@ def _launch_failure_result(
     launch: AgentLaunchResult,
     seed: int | None,
     include_outputs: bool,
-    resilience_path: str | None,
 ) -> AttemptResult | None:
     if launch.timed_out:
         status: AttemptStatus = "timeout"
@@ -399,7 +430,6 @@ def _launch_failure_result(
         stdout_tail=_tail(launch.stdout),
         stderr_tail=_tail(launch.stderr),
         output=output,
-        resilience_report_path=resilience_path,
     )
 
 
@@ -411,7 +441,6 @@ def _error_attempt(
     duration_ms: int,
     error: str,
     seed: int | None,
-    resilience_path: str | None,
 ) -> AttemptResult:
     return AttemptResult(
         task_id=task_id,
@@ -422,7 +451,6 @@ def _error_attempt(
         exit_code=None,
         error=error,
         seed=seed,
-        resilience_report_path=resilience_path,
     )
 
 

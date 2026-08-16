@@ -26,7 +26,8 @@ Part of [Invariant Labs](https://github.com/invariant-sh). Site: [getinvariant.s
 | uv + Ruff + pytest + Astral `ty` CI | ✅ |
 | Mutation and CRAP quality gates | ✅ |
 | CrewAI / LangGraph / OpenAI-compatible examples | ✅ |
-| Optional Maul adversity adapter | ✅ (optional) |
+| Optional Maul adversity adapter | ✅ per-attempt proxy lifecycle |
+| GitHub Action merge gate | ✅ `holds run` then `holds compare` |
 | LLM-as-judge | 🚧 port reserved, not a default gate |
 
 ## Install
@@ -151,19 +152,38 @@ Required CI uses a local deterministic OpenAI-compatible stub. Live provider/ope
 
 ## Optional Maul integration
 
+Tasks may declare Maul as an adversity condition. With `--enable-maul`, Holds starts an isolated Maul process **per attempt**, injects `MAUL_BASE_URL` / `OPENAI_BASE_URL`, waits for the proxy, then tears it down and attaches `reliability_report.json`.
+
 ```bash
 uv run holds run --suite holds.yaml --enable-maul
 ```
 
-Tasks may declare:
-
 ```yaml
 maul:
   scenarios: [force_500]
-  repeats: 2
+  expected_outcome: safe_degradation
+  repeats: 1
 ```
 
-Normal task quality and behavior-under-failure remain separate concerns. Maul is never required for ordinary Holds runs.
+`expected_outcome` is `task_complete` (default) or `safe_degradation`. Task `passed` is grader-only; HTTP recovery never implies task success. Resilience fields on the attempt (`resilience_report_path`, `resilience_expected_outcome`, `resilience_unrecovered_sessions`) stay separate.
+
+Override the binary with `HOLDS_MAUL_BIN` when you are not using `maul` on `PATH`.
+
+See [`docs/stack-walkthrough.md`](./docs/stack-walkthrough.md) and [`examples/maul_adversity_agent/`](./examples/maul_adversity_agent).
+
+## GitHub Action merge gate
+
+`.github/actions/holds-run` runs `holds run` then optional `holds compare` against a checked-in baseline. The suite still writes the result artifact when thresholds fail.
+
+```yaml
+- uses: invariant-sh/holds/.github/actions/holds-run@main
+  with:
+    working-directory: examples/deterministic_agent
+    suite: holds.yaml
+    baseline: baselines/accepted.json
+```
+
+Promote a reviewed report with `holds baseline --force` before committing a new `baselines/accepted.json`.
 
 ## Security
 
