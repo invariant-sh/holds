@@ -14,6 +14,7 @@ AttemptStatus = Literal[
     "missing_artifact",
     "grader_error",
 ]
+MaulExpectedOutcome = Literal["task_complete", "safe_degradation"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -55,10 +56,14 @@ class MaulCondition:
     scenarios: tuple[str, ...] = ()
     repeats: int | None = None
     config: str | None = None
+    expected_outcome: MaulExpectedOutcome = "task_complete"
 
     def __post_init__(self) -> None:
         if self.repeats is not None and self.repeats < 1:
             msg = "maul.repeats must be >= 1"
+            raise ValueError(msg)
+        if self.expected_outcome not in {"task_complete", "safe_degradation"}:
+            msg = "maul.expected_outcome must be task_complete or safe_degradation"
             raise ValueError(msg)
 
 
@@ -147,7 +152,11 @@ class Suite:
 
     def repeats_for(self, task: TaskSpec) -> int:
         """Resolve effective repeat count for a task."""
-        return task.repeats if task.repeats is not None else self.defaults.repeats
+        if task.repeats is not None:
+            return task.repeats
+        if task.maul is not None and task.maul.repeats is not None:
+            return task.maul.repeats
+        return self.defaults.repeats
 
     def timeout_for(self, task: TaskSpec) -> float:
         """Resolve effective timeout for a task."""
@@ -186,6 +195,10 @@ class AttemptResult:
     stdout_tail: str | None = None
     stderr_tail: str | None = None
     resilience_report_path: str | None = None
+    resilience_notes: str | None = None
+    resilience_expected_outcome: str | None = None
+    resilience_unrecovered_sessions: int | None = None
+    resilience_recovery_events: int | None = None
 
 
 @dataclass(frozen=True, slots=True)

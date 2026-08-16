@@ -133,6 +133,12 @@ def _attempt_from_dict(payload: dict[str, Any]) -> AttemptResult:
         stdout_tail=_optional_str(payload.get("stdout_tail")),
         stderr_tail=_optional_str(payload.get("stderr_tail")),
         resilience_report_path=_optional_str(payload.get("resilience_report_path")),
+        resilience_notes=_optional_str(payload.get("resilience_notes")),
+        resilience_expected_outcome=_optional_str(payload.get("resilience_expected_outcome")),
+        resilience_unrecovered_sessions=_optional_int(
+            payload.get("resilience_unrecovered_sessions")
+        ),
+        resilience_recovery_events=_optional_int(payload.get("resilience_recovery_events")),
     )
 
 

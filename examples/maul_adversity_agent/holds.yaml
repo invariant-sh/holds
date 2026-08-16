@@ -1,0 +1,45 @@
+version: 1
+agent:
+  command: "python agent.py"
+  result_path: "artifacts/result.json"
+defaults:
+  repeats: 1
+  timeout_seconds: 15
+  seed: 7
+thresholds:
+  pass_rate_gte: 1.0
+tasks:
+  - id: classify-refund-request
+    input:
+      customer_message: "I was charged twice for my subscription."
+    expected:
+      category: refund_request
+      status: ok
+    graders:
+      - type: exact_field
+        path: "$.category"
+        equals: refund_request
+      - type: exact_field
+        path: "$.status"
+        equals: ok
+    thresholds:
+      pass_rate_gte: 1.0
+  - id: classify-under-force-500
+    input:
+      customer_message: "I was charged twice for my subscription."
+    expected:
+      category: refund_request
+      status: degraded
+    graders:
+      - type: exact_field
+        path: "$.category"
+        equals: refund_request
+      - type: exact_field
+        path: "$.status"
+        equals: degraded
+    thresholds:
+      pass_rate_gte: 1.0
+    maul:
+      scenarios: [force_500]
+      expected_outcome: safe_degradation
+      repeats: 1

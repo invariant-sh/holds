@@ -49,6 +49,7 @@ tasks:
     maul:
       scenarios: [force_500]
       repeats: 2
+      expected_outcome: safe_degradation
     graders:
       - type: exact
         equals: {ok: true}
@@ -58,6 +59,8 @@ tasks:
     suite = YamlSuiteLoader().load(path)
     assert suite.tasks[0].maul is not None
     assert suite.tasks[0].maul.scenarios == ("force_500",)
+    assert suite.tasks[0].maul.expected_outcome == "safe_degradation"
+    assert suite.repeats_for(suite.tasks[0]) == 2
 
 
 def test_normalize_python_dict_and_evidence() -> None:

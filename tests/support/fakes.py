@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
-from holds.ports import AgentLaunchRequest, AgentLaunchResult
+from holds.ports import AgentLaunchRequest, AgentLaunchResult, ResilienceOutcome, ResilienceRequest
 
 
 @dataclass
@@ -50,4 +51,37 @@ class FakeAgentRunner:
             stderr="",
             output=output,
             artifact_error=None,
+        )
+
+
+class FakeResilienceRunner:
+    def __init__(
+        self,
+        *,
+        env: dict[str, str] | None = None,
+        report_path: Path | None = None,
+        unrecovered_sessions: int | None = 1,
+        recovery_events: int | None = 0,
+    ) -> None:
+        self.env = env or {
+            "MAUL_BASE_URL": "http://127.0.0.1:9/v1",
+            "OPENAI_BASE_URL": "http://127.0.0.1:9/v1",
+        }
+        self.report_path = report_path
+        self.unrecovered_sessions = unrecovered_sessions
+        self.recovery_events = recovery_events
+        self.prepared: list[ResilienceRequest] = []
+        self.collected: list[ResilienceRequest] = []
+
+    def prepare(self, request: ResilienceRequest) -> ResilienceOutcome:
+        self.prepared.append(request)
+        return ResilienceOutcome(report_path=self.report_path, notes="prepared", env=self.env)
+
+    def collect(self, request: ResilienceRequest) -> ResilienceOutcome:
+        self.collected.append(request)
+        return ResilienceOutcome(
+            report_path=self.report_path,
+            notes="collected",
+            unrecovered_sessions=self.unrecovered_sessions,
+            recovery_events=self.recovery_events,
         )

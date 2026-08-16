@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Protocol
 
@@ -112,6 +112,8 @@ class ResilienceRequest:
     config_path: Path | None
     repeats: int
     seed: int | None
+    task_id: str = ""
+    attempt_id: str = ""
 
 
 @dataclass(frozen=True, slots=True)
@@ -120,6 +122,9 @@ class ResilienceOutcome:
 
     report_path: Path | None
     notes: str | None = None
+    env: dict[str, str] = field(default_factory=dict)
+    unrecovered_sessions: int | None = None
+    recovery_events: int | None = None
 
 
 class ResilienceRunner(Protocol):

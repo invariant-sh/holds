@@ -5,6 +5,7 @@ Black-box agents that speak the Holds I/O contract.
 | Example | Purpose |
 |---|---|
 | `deterministic_agent` | Required CI fixture with schema + custom graders |
+| `maul_adversity_agent` | Optional Maul proxy lifecycle; task quality stays separate from HTTP recovery |
 | `crewai_agent` | CrewAI-shaped external process |
 | `langgraph_agent` | LangGraph-shaped external process |
 | `openai_compat_agent` | OpenAI-compatible open-model client |

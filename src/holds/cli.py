@@ -99,7 +99,11 @@ def run_command(
             clock=SystemClock(),
             ids=UuidFactory(),
             revision_provider=GitRevisionProvider(cwd=str(suite.parent)),
-            resilience_runner=(MaulResilienceRunner() if enable_maul else NoopResilienceRunner()),
+            resilience_runner=(
+                MaulResilienceRunner(maul_bin=os.environ.get("HOLDS_MAUL_BIN", "maul"))
+                if enable_maul
+                else NoopResilienceRunner()
+            ),
             include_outputs=include_outputs,
         )
         result = service.execute(
