@@ -1,9 +1,10 @@
 [project]
 name = "holds"
-version = "0.1.0"
+version = "0.2.0"
 description = "Continuous task evaluation and regression harness for LLM agents"
 readme = "README.md"
 license = "Apache-2.0"
+license-files = ["LICENSE"]
 requires-python = ">=3.12"
 authors = [{ name = "Invariant Labs" }]
 keywords = ["llm", "agents", "evaluation", "regression", "ci"]
@@ -12,7 +13,9 @@ classifiers = [
   "Environment :: Console",
   "Intended Audience :: Developers",
   "License :: OSI Approved :: Apache Software License",
+  "Operating System :: OS Independent",
   "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
   "Topic :: Software Development :: Testing",
@@ -52,9 +55,10 @@ Homepage = "https://github.com/invariant-sh/holds"
 Documentation = "https://github.com/invariant-sh/holds#readme"
 Repository = "https://github.com/invariant-sh/holds"
 Issues = "https://github.com/invariant-sh/holds/issues"
+Changelog = "https://github.com/invariant-sh/holds/blob/main/CHANGELOG.md"
 
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling>=1.27"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
@@ -72,6 +76,7 @@ include = [
   "/README.md",
   "/LICENSE",
   "/SECURITY.md",
+  "/CHANGELOG.md",
 ]
 
 [dependency-groups]

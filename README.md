@@ -14,7 +14,7 @@ Part of [Invariant Labs](https://github.com/invariant-sh). Site: [getinvariant.s
 
 ## Status
 
-**v0.1 local core** — suite-first evaluation with deterministic graders, repeats, baselines, CI gates, and black-box framework examples.
+**v0.2.0** — suite-first evaluation with deterministic graders, repeats, baselines, CI gates, and black-box framework examples. The `holds` distribution is ready to publish to PyPI when a maintainer pushes a `v*` tag.
 
 | Capability | Status |
 |---|---|
@@ -26,24 +26,29 @@ Part of [Invariant Labs](https://github.com/invariant-sh). Site: [getinvariant.s
 | uv + Ruff + pytest + Astral `ty` CI | ✅ |
 | Mutation and CRAP quality gates | ✅ |
 | CrewAI / LangGraph / OpenAI-compatible examples | ✅ |
-| Optional Maul adversity adapter | ✅ per-attempt proxy lifecycle |
+| Optional Maul adversity adapter | ✅ per-attempt proxy lifecycle; binary is Maul [v0.1.0](https://github.com/invariant-sh/maul/releases/tag/v0.1.0) |
 | GitHub Action merge gate | ✅ `holds run` then `holds compare` |
+| PyPI package `holds` | ✅ Trusted Publishing workflow; first upload is the `v0.2.0` tag |
 | LLM-as-judge | 🚧 port reserved, not a default gate |
 
 ## Install
 
-Requires Python 3.12+ and [uv](https://docs.astral.sh/uv/).
+Requires Python 3.12+.
+
+The PyPI distribution name, import package, and CLI command are all `holds`. v0.2.0 is the first release published from this repo. `pip` succeeds after a maintainer pushes the `v0.2.0` tag (see [Releasing](./CONTRIBUTING.md#releasing)).
+
+```bash
+pip install holds
+uv tool install holds
+holds --help
+```
+
+Development checkout:
 
 ```bash
 uv sync --extra dev
 uv run holds --help
-```
-
-Install as a CLI from the repo:
-
-```bash
-uv pip install -e .
-holds validate --suite contracts/suite.v1.example.yaml
+uv run holds validate --suite examples/deterministic_agent/holds.yaml
 ```
 
 ## Agent I/O contract
@@ -157,6 +162,29 @@ Required CI uses a local deterministic OpenAI-compatible stub. Live provider/ope
 
 Tasks may declare Maul as an adversity condition. With `--enable-maul`, Holds starts an isolated Maul process **per attempt**, injects `MAUL_BASE_URL` / `OPENAI_BASE_URL`, waits for the proxy, then tears it down and attaches `reliability_report.json`.
 
+Holds expects the checksum-verified **Maul v0.1.0** binary. Release assets (each has a sibling `.sha256`):
+
+| Runner | Asset |
+|---|---|
+| Linux x86_64 | [`maul-v0.1.0-x86_64-unknown-linux-gnu.tar.gz`](https://github.com/invariant-sh/maul/releases/download/v0.1.0/maul-v0.1.0-x86_64-unknown-linux-gnu.tar.gz) |
+| Linux arm64 | [`maul-v0.1.0-aarch64-unknown-linux-gnu.tar.gz`](https://github.com/invariant-sh/maul/releases/download/v0.1.0/maul-v0.1.0-aarch64-unknown-linux-gnu.tar.gz) |
+| macOS x86_64 | [`maul-v0.1.0-x86_64-apple-darwin.tar.gz`](https://github.com/invariant-sh/maul/releases/download/v0.1.0/maul-v0.1.0-x86_64-apple-darwin.tar.gz) |
+| macOS arm64 | [`maul-v0.1.0-aarch64-apple-darwin.tar.gz`](https://github.com/invariant-sh/maul/releases/download/v0.1.0/maul-v0.1.0-aarch64-apple-darwin.tar.gz) |
+
+```bash
+tag=v0.1.0
+target=x86_64-unknown-linux-gnu   # or aarch64-unknown-linux-gnu, x86_64-apple-darwin, aarch64-apple-darwin
+archive="maul-${tag}-${target}.tar.gz"
+base="https://github.com/invariant-sh/maul/releases/download/${tag}"
+curl -fsSL -o "${archive}" "${base}/${archive}"
+curl -fsSL -o "${archive}.sha256" "${base}/${archive}.sha256"
+sha256sum -c "${archive}.sha256"    # macOS: shasum -a 256 -c "${archive}.sha256"
+tar -xzf "${archive}"
+mkdir -p "$HOME/.local/bin"
+install "maul-${tag}-${target}/maul" "$HOME/.local/bin/maul"
+maul --version
+```
+
 ```bash
 uv run holds run --suite holds.yaml --enable-maul
 ```
@@ -170,7 +198,7 @@ maul:
 
 `expected_outcome` is `task_complete` (default) or `safe_degradation`. Task `passed` is grader-only; HTTP recovery never implies task success. Resilience fields on the attempt (`resilience_report_path`, `resilience_expected_outcome`, `resilience_unrecovered_sessions`) stay separate.
 
-Override the binary with `HOLDS_MAUL_BIN` when you are not using `maul` on `PATH`.
+Override the binary with `HOLDS_MAUL_BIN` when you are not using `maul` on `PATH`. The default command name remains `maul`.
 
 See [`docs/stack-walkthrough.md`](./docs/stack-walkthrough.md) and [`examples/maul_adversity_agent/`](./examples/maul_adversity_agent).
 

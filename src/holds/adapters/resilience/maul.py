@@ -23,6 +23,10 @@ from holds.ports import ResilienceOutcome, ResilienceRequest
 LISTEN_WAIT_SECONDS = 5.0
 TERMINATE_WAIT_SECONDS = 5.0
 AGENT_BASE_URL_KEYS = ("MAUL_BASE_URL", "OPENAI_BASE_URL")
+# Checksum-verified GitHub release Holds expects operators to install.
+# Asset names are maul-v0.1.0-<target>.tar.gz plus a sibling .sha256.
+MAUL_RELEASE_TAG = "v0.1.0"
+MAUL_RELEASE_URL = f"https://github.com/invariant-sh/maul/releases/tag/{MAUL_RELEASE_TAG}"
 
 
 class NoopResilienceRunner:
@@ -107,10 +111,7 @@ class MaulResilienceRunner:
                 return
         elif shutil.which(self._maul_bin) is not None:
             return
-        msg = (
-            f"`{self._maul_bin}` not found on PATH; install Maul or remove task.maul from the suite"
-        )
-        raise ResilienceError(msg)
+        raise ResilienceError(_missing_binary_message(self._maul_bin))
 
     def _validate_config(self, config_path: Path, work_dir: Path) -> None:
         completed = subprocess.run(
@@ -163,6 +164,16 @@ def _session_key(request: ResilienceRequest) -> str:
 
 def _is_python_script(maul_bin: str) -> bool:
     return maul_bin.endswith(".py")
+
+
+def _missing_binary_message(maul_bin: str) -> str:
+    """Tell the operator where the supported Maul binary comes from."""
+    return (
+        f"`{maul_bin}` not found on PATH. Install checksum-verified Maul "
+        f"{MAUL_RELEASE_TAG} from {MAUL_RELEASE_URL} "
+        f"(assets maul-{MAUL_RELEASE_TAG}-<target>.tar.gz and the sibling .sha256), "
+        "set HOLDS_MAUL_BIN, or remove task.maul from the suite."
+    )
 
 
 def _reserve_loopback_address() -> str:
