@@ -28,7 +28,9 @@ dependencies = [
 dev = [
   "coverage[toml]>=7.8.0",
   "hypothesis>=6.131.0",
-  "mutmut>=3.2.0",
+  # 3.8 keeps source_paths, only_mutate, and pytest_add_cli_args_test_selection.
+  # The upper bound stops a later 3.x CLI break from floating in unpinned.
+  "mutmut>=3.8.0,<3.9",
   "pytest>=8.3.0",
   "pytest-cov>=6.1.0",
   "radon>=6.0.1",
@@ -72,11 +74,11 @@ include = [
   "/SECURITY.md",
 ]
 
-[tool.uv]
-dev-dependencies = [
+[dependency-groups]
+dev = [
   "coverage[toml]>=7.8.0",
   "hypothesis>=6.131.0",
-  "mutmut>=3.2.0",
+  "mutmut>=3.8.0,<3.9",
   "pytest>=8.3.0",
   "pytest-cov>=6.1.0",
   "radon>=6.0.1",
@@ -165,5 +167,17 @@ exclude = ["examples"]
 all = "error"
 
 [tool.mutmut]
-paths_to_mutate = ["src/holds/domain/", "src/holds/application/"]
-tests_dir = ["tests/"]
+# source_paths is the importable tree mutmut copies. only_mutate is the
+# subset that actually receives mutants (domain and application only).
+source_paths = ["src"]
+only_mutate = [
+  "src/holds/domain/*",
+  "src/holds/application/*",
+]
+# Pytest runs with cwd=mutants/. Tests locate examples/, contracts/, and
+# scripts/ from the copied test file, so those trees must be copied too.
+# e2e tests spawn `python -m holds` in an example directory. That process
+# imports the mutated tree and mutmut then fails to find its config. Those
+# tests do not kill mutants in-process, so they are deselected here.
+also_copy = ["scripts", "examples", "contracts"]
+pytest_add_cli_args_test_selection = ["-m", "not e2e and not live", "tests/"]
