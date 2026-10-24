@@ -21,7 +21,7 @@ It launches user-provided commands, reads result artifacts, and may import trust
 
 ## Optional Maul integration
 
-When `--enable-maul` is used, Holds may launch the Maul binary and attach resilience reports. Follow [Maul's security policy](https://github.com/invariant-sh/maul/blob/main/SECURITY.md): local/CI only, no public edge exposure, never log forwarded credentials.
+When `--enable-maul` is used, Holds may launch the Maul binary and attach resilience reports. Install the checksum-verified [Maul v0.1.0 release assets](https://github.com/invariant-sh/maul/releases/tag/v0.1.0). Do not fetch an unpinned build. Follow [Maul's security policy](https://github.com/invariant-sh/maul/blob/v0.1.0/SECURITY.md): local/CI only, no public edge exposure, never log forwarded credentials.
 
 ## Reporting a vulnerability
 

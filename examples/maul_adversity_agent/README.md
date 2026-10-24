@@ -8,7 +8,9 @@ Task quality and resilience stay separate:
 - `classify-under-force-500` declares `maul.expected_outcome: safe_degradation`; graders require `status: degraded`. Passing graders does not mean Maul recovered the session.
 
 ```bash
-export HOLDS_MAUL_BIN=../../tests/support/fake_maul.py   # or a real `maul` on PATH
+# Test stand-in. A real binary is Maul v0.1.0 from the release assets:
+# https://github.com/invariant-sh/maul/releases/tag/v0.1.0
+export HOLDS_MAUL_BIN=../../tests/support/fake_maul.py
 uv run holds run --suite holds.yaml --enable-maul --report artifacts/holds_report.json
 ```
 

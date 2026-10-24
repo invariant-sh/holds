@@ -30,4 +30,4 @@ body:
     id: version
     attributes:
       label: Version or commit
-      placeholder: v0.1.0 or abcdef0
+      placeholder: v0.2.0 or abcdef0

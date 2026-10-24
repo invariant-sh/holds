@@ -48,7 +48,9 @@ uv run holds baseline \
 The `examples/maul_adversity_agent` suite has a healthy task and a `force_500` task whose expected outcome is `safe_degradation`.
 
 ```bash
-# Real Maul on PATH, or a test stand-in:
+# Checksum-verified Maul v0.1.0, or the test stand-in below.
+# Linux x86_64 asset (see the Holds README for the other targets and sha256 check):
+# https://github.com/invariant-sh/maul/releases/download/v0.1.0/maul-v0.1.0-x86_64-unknown-linux-gnu.tar.gz
 export HOLDS_MAUL_BIN=tests/support/fake_maul.py
 
 uv run holds run \

@@ -7,10 +7,17 @@ from pathlib import Path
 
 from typer.testing import CliRunner
 
+from holds import __version__
 from holds.application.exit_codes import ExitCode
 from holds.cli import app
 
 runner = CliRunner()
+
+
+def test_version_option_prints_package_version() -> None:
+    result = runner.invoke(app, ["--version"])
+    assert result.exit_code == ExitCode.SUCCESS
+    assert result.stdout.strip() == __version__ == "0.2.0"
 
 
 def test_validate_and_run_cli(tmp_path: Path) -> None:

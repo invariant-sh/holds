@@ -14,7 +14,12 @@ from tests.support.fakes import (
 )
 
 from holds.adapters.graders import default_graders
-from holds.adapters.resilience.maul import MaulResilienceRunner, NoopResilienceRunner
+from holds.adapters.resilience.maul import (
+    MAUL_RELEASE_TAG,
+    MAUL_RELEASE_URL,
+    MaulResilienceRunner,
+    NoopResilienceRunner,
+)
 from holds.application.run import RunService
 from holds.domain.errors import ResilienceError
 from holds.domain.models import MaulCondition, Suite, TaskSpec
@@ -23,10 +28,14 @@ from holds.ports import ResilienceRequest
 
 def test_maul_runner_requires_binary(tmp_path: Path) -> None:
     runner = MaulResilienceRunner(maul_bin="maul-binary-does-not-exist", work_dir=tmp_path)
-    with pytest.raises(ResilienceError, match="not found"):
+    with pytest.raises(ResilienceError, match=r"releases/tag/v0\.1\.0") as caught:
         runner.prepare(
             ResilienceRequest(scenarios=("force_500",), config_path=None, repeats=1, seed=1)
         )
+    message = str(caught.value)
+    assert MAUL_RELEASE_TAG == "v0.1.0"
+    assert MAUL_RELEASE_URL in message
+    assert "maul-v0.1.0-<target>.tar.gz" in message
 
 
 def test_noop_resilience_runner() -> None:
