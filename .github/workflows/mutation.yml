@@ -27,5 +27,7 @@ jobs:
 
       - name: Run mutation tests
         run: |
-          uv run mutmut run --paths-to-mutate src/holds/domain/ --paths-to-mutate src/holds/application/
+          uv run mutmut run
           uv run mutmut results
+          uv run mutmut export-cicd-stats
+          uv run python scripts/check_mutation_gate.py

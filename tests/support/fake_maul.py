@@ -37,7 +37,10 @@ def main(argv: list[str] | None = None) -> int:
     force_500 = "force_500" in config_text
     host, port_text = address.rsplit(":", 1)
     httpd = ThreadingHTTPServer((host, int(port_text)), _handler(force_500))
-    httpd.allow_reuse_address = True
+    # Poll on the main thread. serve_forever + shutdown() from a signal handler
+    # can miss SIGTERM long enough for Holds to SIGKILL the process before the
+    # report is written, which flakes the lifecycle test under mutmut's -x run.
+    httpd.socket.settimeout(0.2)
     stop = threading.Event()
 
     def _handle_signal(_signum: int, _frame: object) -> None:
@@ -45,11 +48,9 @@ def main(argv: list[str] | None = None) -> int:
 
     signal.signal(signal.SIGTERM, _handle_signal)
     signal.signal(signal.SIGINT, _handle_signal)
-    thread = threading.Thread(target=httpd.serve_forever, daemon=True)
-    thread.start()
-    stop.wait()
-    httpd.shutdown()
-    thread.join(timeout=2)
+    while not stop.is_set():
+        httpd.handle_request()
+    httpd.server_close()
     _write_report(Path("reliability_report.json"), force_500=force_500)
     return 0
 

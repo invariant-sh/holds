@@ -133,10 +133,13 @@ uv run pytest -m "not live"
 uv run python scripts/check_crap.py
 ```
 
-Optional mutation testing:
+Optional mutation testing (domain and application only; see `[tool.mutmut]`):
 
 ```bash
-uv run mutmut run --paths-to-mutate src/holds/domain/ --paths-to-mutate src/holds/application/
+uv run mutmut run
+uv run mutmut results
+uv run mutmut export-cicd-stats
+uv run python scripts/check_mutation_gate.py
 ```
 
 ## External framework examples
